@@ -1,0 +1,152 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String
+  email         String    @unique
+  password      String
+  role          String    @default("admin")
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  contacts      Contact[]
+  deals         Deal[]
+  conversations Conversation[]
+  appointments  Appointment[]
+  automations   Automation[]
+}
+
+model Contact {
+  id            String    @id @default(cuid())
+  firstName     String
+  lastName      String
+  email         String?
+  phone         String?
+  company       String?
+  tags          String    @default("[]")
+  source        String?
+  status        String    @default("lead")
+  notes         String?
+  customFields  String    @default("{}")
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  userId        String
+  user          User      @relation(fields: [userId], references: [id])
+  deals         Deal[]
+  conversations Conversation[]
+  appointments  Appointment[]
+  activities    Activity[]
+}
+
+model Pipeline {
+  id          String   @id @default(cuid())
+  name        String
+  stages      String   @default("[]")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deals       Deal[]
+}
+
+model Deal {
+  id          String   @id @default(cuid())
+  title       String
+  value       Float    @default(0)
+  stage       String
+  status      String   @default("open")
+  probability Int      @default(0)
+  closeDate   DateTime?
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  contactId   String
+  contact     Contact  @relation(fields: [contactId], references: [id])
+  pipelineId  String
+  pipeline    Pipeline @relation(fields: [pipelineId], references: [id])
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+}
+
+model Conversation {
+  id          String    @id @default(cuid())
+  channel     String
+  subject     String?
+  status      String    @default("open")
+  lastMessage String?
+  lastMessageAt DateTime?
+  aiEnabled   Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  contactId   String
+  contact     Contact   @relation(fields: [contactId], references: [id])
+  userId      String
+  user        User      @relation(fields: [userId], references: [id])
+  messages    Message[]
+}
+
+model Message {
+  id              String   @id @default(cuid())
+  body            String
+  direction       String
+  channel         String
+  status          String   @default("sent")
+  isAiGenerated   Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  conversationId  String
+  conversation    Conversation @relation(fields: [conversationId], references: [id])
+}
+
+model Appointment {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  startTime   DateTime
+  endTime     DateTime
+  status      String   @default("scheduled")
+  location    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  contactId   String?
+  contact     Contact? @relation(fields: [contactId], references: [id])
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+}
+
+model Automation {
+  id          String   @id @default(cuid())
+  name        String
+  trigger     String
+  actions     String   @default("[]")
+  isActive    Boolean  @default(true)
+  lastRun     DateTime?
+  runCount    Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+}
+
+model Activity {
+  id          String   @id @default(cuid())
+  type        String
+  description String
+  metadata    String   @default("{}")
+  createdAt   DateTime @default(now())
+  contactId   String?
+  contact     Contact? @relation(fields: [contactId], references: [id])
+}
+
+model MissedCall {
+  id          String   @id @default(cuid())
+  phone       String
+  callerName  String?
+  autoReplied Boolean  @default(false)
+  replyMethod String?
+  replyBody   String?
+  createdAt   DateTime @default(now())
+}
