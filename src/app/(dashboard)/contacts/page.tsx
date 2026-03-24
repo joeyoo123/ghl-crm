@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { prisma } from "@/lib/prisma";
 import { getDefaultUser } from "@/lib/auth";
 import { ContactList } from "@/components/contacts/contact-list";

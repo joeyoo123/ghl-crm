@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { prisma } from "@/lib/prisma";
 import { getDefaultUser } from "@/lib/auth";
 import { ConversationView } from "@/components/conversations/conversation-view";
