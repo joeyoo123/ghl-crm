@@ -53,6 +53,8 @@ export function AITestChat({ contacts }: { contacts: Contact[] }) {
   const [selectedContact, setSelectedContact] = useState(contacts[0]?.id || "");
   const [channel, setChannel] = useState("chat");
   const [isStarted, setIsStarted] = useState(false);
+  const [isStarting, setIsStarting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const contact = contacts.find((c) => c.id === selectedContact);
@@ -63,18 +65,36 @@ export function AITestChat({ contacts }: { contacts: Contact[] }) {
   }, [messages]);
 
   async function startConversation() {
-    const res = await fetch("/api/conversations/reply", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contactId: selectedContact,
-        channel,
-      }),
-    });
-    if (res.ok) {
+    if (!selectedContact) {
+      setError("Please select a contact first.");
+      return;
+    }
+    setIsStarting(true);
+    setError(null);
+
+    try {
+      const res = await fetch("/api/conversations/reply", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "create_test_conversation",
+          contactId: selectedContact,
+          channel,
+        }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || `Server error: ${res.status}`);
+      }
+
       const data = await res.json();
       setConversationId(data.conversationId);
       setIsStarted(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to start conversation. Please try again.");
+    } finally {
+      setIsStarting(false);
     }
   }
 
@@ -200,9 +220,24 @@ export function AITestChat({ contacts }: { contacts: Contact[] }) {
                 </div>
               </div>
 
-              <Button onClick={startConversation} className="w-full" size="lg">
-                <Sparkles className="w-4 h-4 mr-2" />
-                Start AI Conversation
+              {error && (
+                <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+                  {error}
+                </div>
+              )}
+
+              <Button onClick={startConversation} className="w-full" size="lg" disabled={isStarting || !selectedContact}>
+                {isStarting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Starting...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-4 h-4 mr-2" />
+                    Start AI Conversation
+                  </>
+                )}
               </Button>
             </CardContent>
           </Card>
