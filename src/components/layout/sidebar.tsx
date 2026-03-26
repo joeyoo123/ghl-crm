@@ -13,6 +13,7 @@ import {
   Settings,
   Phone,
   Bot,
+  FlaskConical,
 } from "lucide-react";
 
 const navItems = [
@@ -20,6 +21,7 @@ const navItems = [
   { href: "/contacts", icon: Users, label: "Contacts" },
   { href: "/pipelines", icon: GitBranch, label: "Pipelines" },
   { href: "/conversations", icon: MessageSquare, label: "Conversations" },
+  { href: "/ai-test", icon: FlaskConical, label: "AI Agent Test" },
   { href: "/calendar", icon: Calendar, label: "Calendar" },
   { href: "/automations", icon: Zap, label: "Automations" },
   { href: "/settings", icon: Settings, label: "Settings" },

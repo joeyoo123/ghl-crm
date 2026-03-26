@@ -138,6 +138,54 @@ export async function PATCH(req: NextRequest) {
     data: { lastMessage: body.body, lastMessageAt: new Date() },
   });
 
+  if (body.direction === "inbound") {
+    const conversation = await prisma.conversation.findUnique({
+      where: { id: body.conversationId },
+      include: {
+        contact: { select: { firstName: true, lastName: true } },
+      },
+    });
+
+    if (conversation?.aiEnabled) {
+      const allMessages = await prisma.message.findMany({
+        where: { conversationId: body.conversationId },
+        orderBy: { createdAt: "asc" },
+      });
+
+      const history = allMessages.map((m) => ({
+        role: (m.direction === "inbound" ? "user" : "assistant") as "user" | "assistant",
+        content: m.body,
+      }));
+
+      const contactName = `${conversation.contact.firstName} ${conversation.contact.lastName}`;
+
+      const aiReply = await generateAIResponse({
+        contactName,
+        businessName: "Our Business",
+        conversationHistory: history,
+        channel: (conversation.channel || "chat") as "sms" | "email" | "chat",
+        triggerType: "inquiry",
+      });
+
+      const aiMessage = await prisma.message.create({
+        data: {
+          body: aiReply,
+          direction: "outbound",
+          channel: conversation.channel || "chat",
+          isAiGenerated: true,
+          conversationId: body.conversationId,
+        },
+      });
+
+      await prisma.conversation.update({
+        where: { id: body.conversationId },
+        data: { lastMessage: aiReply, lastMessageAt: new Date() },
+      });
+
+      return NextResponse.json({ message, aiReply: aiMessage });
+    }
+  }
+
   return NextResponse.json(message);
 }
 
